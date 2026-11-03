@@ -1788,6 +1788,7 @@ struct wined3d_adapter_identifier
     LUID adapter_luid;
     SIZE_T video_memory;
     SIZE_T shared_system_memory;
+    BOOL software;
 };
 
 struct wined3d_video_memory_info

@@ -222,7 +222,7 @@ static HRESULT dxgi_adapter_get_desc(struct dxgi_adapter *adapter, DXGI_ADAPTER_
     }
     else
 #endif
-    desc->Flags = 0;
+    desc->Flags = adapter_id.software ? DXGI_ADAPTER_FLAG3_SOFTWARE : 0;
     desc->GraphicsPreemptionGranularity = 0; /* FIXME */
     desc->ComputePreemptionGranularity = 0; /* FIXME */
 

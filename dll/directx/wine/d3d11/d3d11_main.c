@@ -152,6 +152,31 @@ HRESULT WINAPI D3D11CoreCreateDevice(IDXGIFactory *factory, IDXGIAdapter *adapte
 }
 
 #ifdef __REACTOS__
+static HRESULT d3d11_find_software_adapter(IDXGIFactory *factory, IDXGIAdapter **adapter)
+{
+    IDXGIAdapter *candidate;
+    IDXGIAdapter1 *candidate1;
+    DXGI_ADAPTER_DESC1 desc;
+    UINT index;
+    HRESULT hr;
+
+    for (index = 0; SUCCEEDED(hr = IDXGIFactory_EnumAdapters(factory, index, &candidate)); ++index)
+    {
+        if (SUCCEEDED(IDXGIAdapter_QueryInterface(candidate, &IID_IDXGIAdapter1, (void **)&candidate1)))
+        {
+            hr = IDXGIAdapter1_GetDesc1(candidate1, &desc);
+            IDXGIAdapter1_Release(candidate1);
+            if (SUCCEEDED(hr) && (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE))
+            {
+                *adapter = candidate;
+                return S_OK;
+            }
+        }
+        IDXGIAdapter_Release(candidate);
+    }
+    return hr;
+}
+
 static HRESULT d3d11_create_null_adapter(IDXGIAdapter **adapter)
 {
     HRESULT (WINAPI *create)(REFIID iid, void **adapter);
@@ -235,6 +260,17 @@ static HRESULT d3d11_create_device(IDXGIAdapter *adapter, D3D_DRIVER_TYPE driver
             {
                 IDXGIFactory4 *factory4;
 
+                if (driver_type == D3D_DRIVER_TYPE_WARP && SUCCEEDED(d3d11_find_software_adapter(factory, &adapter)))
+                {
+                    IDXGIFactory_Release(factory);
+                    if (FAILED(hr = IDXGIAdapter_GetParent(adapter, &IID_IDXGIFactory, (void **)&factory)))
+                    {
+                        IDXGIAdapter_Release(adapter);
+                        return hr;
+                    }
+                    break;
+                }
+
                 hr = IDXGIFactory_QueryInterface(factory, &IID_IDXGIFactory4,
                         (void **)&factory4);
                 if (SUCCEEDED(hr))
@@ -312,9 +348,9 @@ static HRESULT d3d11_create_device(IDXGIAdapter *adapter, D3D_DRIVER_TYPE driver
             {
                 if (!swrast)
                 {
-                    WARN("Software device requested, but NULL swrast passed, returning E_FAIL.\n");
+                    WARN("Software device requested, but NULL swrast passed, returning E_INVALIDARG.\n");
                     IDXGIFactory_Release(factory);
-                    return E_FAIL;
+                    return E_INVALIDARG;
                 }
                 hr = IDXGIFactory_CreateSoftwareAdapter(factory, swrast, &adapter);
                 if (FAILED(hr))

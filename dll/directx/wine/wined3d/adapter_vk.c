@@ -2156,6 +2156,8 @@ static bool adapter_vk_init_driver_info(struct wined3d_adapter_vk *adapter_vk,
     const VkMemoryHeap *heap;
     unsigned int i;
 
+    adapter_vk->a.software = properties->deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU;
+
     TRACE("Device name: %s.\n", debugstr_a(properties->deviceName));
     TRACE("Vendor ID: 0x%04x, Device ID: 0x%04x.\n", properties->vendorID, properties->deviceID);
     TRACE("Driver version: %#x.\n", properties->driverVersion);

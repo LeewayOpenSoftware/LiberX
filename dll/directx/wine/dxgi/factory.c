@@ -584,8 +584,25 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_EnumWarpAdapter(IWineDXGIFactory *
 #ifdef __REACTOS__
     TRACE("iface %p, iid %s, adapter %p.\n", iface, debugstr_guid(iid), adapter);
 
+    IDXGIAdapter1 *software_adapter;
+    DXGI_ADAPTER_DESC1 desc;
+    unsigned int index;
+    HRESULT hr;
+
     if (!adapter)
         return DXGI_ERROR_INVALID_CALL;
+
+    for (index = 0; SUCCEEDED(hr = dxgi_factory_EnumAdapters1(iface, index, &software_adapter)); ++index)
+    {
+        hr = IDXGIAdapter1_GetDesc1(software_adapter, &desc);
+        if (SUCCEEDED(hr) && (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE))
+        {
+            hr = IDXGIAdapter1_QueryInterface(software_adapter, iid, adapter);
+            IDXGIAdapter1_Release(software_adapter);
+            return hr;
+        }
+        IDXGIAdapter1_Release(software_adapter);
+    }
 
     return dxgi_factory_create_warp_adapter(0, iid, adapter);
 #else

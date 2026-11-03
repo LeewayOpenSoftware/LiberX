@@ -2612,6 +2612,7 @@ struct wined3d_adapter
     GUID driver_uuid;
     GUID device_uuid;
     LUID luid;
+    bool software;
 
     void *formats;
     size_t format_size;

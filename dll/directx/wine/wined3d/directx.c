@@ -1860,6 +1860,7 @@ HRESULT CDECL wined3d_adapter_get_identifier(const struct wined3d_adapter *adapt
     identifier->adapter_luid = adapter->luid;
     identifier->video_memory = min(~(SIZE_T)0, adapter->driver_info.vram_bytes);
     identifier->shared_system_memory = min(~(SIZE_T)0, adapter->driver_info.sysmem_bytes);
+    identifier->software = adapter->software;
 #if defined(__REACTOS__) && defined(REACTOS_WINE_WDDM)
     wined3d_get_wddm_adapter_identifier(adapter->kmt_adapter, identifier);
 #endif
