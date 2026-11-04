@@ -134,9 +134,15 @@ static void test_dinput_unsupported_operations(void)
 
     if (dinput)
     {
-        hr = IDirectInput8_SendDeviceData(dinput, 0, NULL, NULL, 0);
-        check("dinput_senddevicedata", hr == DIERR_UNSUPPORTED,
-                "SendDeviceData must return unsupported: hr=%lx", hr);
+        IDirectInputDeviceA *device = NULL;
+        hr = IDirectInput8_CreateDevice(dinput, &GUID_SysMouse, &device, NULL);
+        if (SUCCEEDED(hr) && device)
+        {
+            hr = IDirectInputDevice_SendDeviceData(device, 0, NULL, NULL, 0);
+            check("dinput_senddevicedata", hr == DIERR_UNSUPPORTED,
+                    "SendDeviceData must return unsupported: hr=%lx", hr);
+            IDirectInputDevice_Release(device);
+        }
 
         IDirectInput8_Release(dinput);
     }
