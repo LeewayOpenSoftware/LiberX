@@ -4386,9 +4386,45 @@ width_done:
 static HRESULT WINAPI dwritetextlayout_HitTestPoint(IDWriteTextLayout4 *iface,
     FLOAT pointX, FLOAT pointY, BOOL* is_trailinghit, BOOL* is_inside, DWRITE_HIT_TEST_METRICS *metrics)
 {
-    FIXME("%p, %.8e, %.8e, %p, %p, %p): stub\n", iface, pointX, pointY, is_trailinghit, is_inside, metrics);
+    struct dwrite_textlayout *layout = impl_from_IDWriteTextLayout4(iface);
+    struct layout_effective_run *run;
+    UINT32 closest_pos = 0;
+    BOOL found = FALSE;
+    HRESULT hr;
 
-    return E_NOTIMPL;
+    TRACE("%p, %.8e, %.8e, %p, %p, %p.\n", iface, pointX, pointY, is_trailinghit, is_inside, metrics);
+
+    if (!is_trailinghit || !is_inside || !metrics)
+        return E_INVALIDARG;
+
+    if (FAILED(hr = layout_compute_effective_runs(layout)))
+        return hr;
+
+    *is_inside = pointY >= 0.0f && pointY < layout->metrics.height;
+    *is_trailinghit = FALSE;
+
+    LIST_FOR_EACH_ENTRY(run, &layout->effective_runs, struct layout_effective_run, entry)
+    {
+        FLOAT run_top = run->origin.y - run->line->baseline;
+        FLOAT run_bottom = run_top + run->line->height;
+
+        if (pointY >= run_top && pointY < run_bottom)
+        {
+            FLOAT run_left = run->left + run->align_dx;
+            FLOAT run_right = run_left + run->width;
+
+            if (pointX >= run_left && pointX < run_right)
+            {
+                *is_inside = TRUE;
+                closest_pos = run->start_position;
+                *is_trailinghit = (pointX - run_left) > run->width / 2.0f;
+                found = TRUE;
+                break;
+            }
+        }
+    }
+
+    return IDWriteTextLayout4_HitTestTextPosition(iface, closest_pos, *is_trailinghit, NULL, NULL, metrics);
 }
 
 static struct layout_effective_run *layout_get_effective_run_for_position(struct dwrite_textlayout *layout,
@@ -4506,10 +4542,47 @@ static HRESULT WINAPI dwritetextlayout_HitTestTextRange(IDWriteTextLayout4 *ifac
     UINT32 textPosition, UINT32 textLength, FLOAT originX, FLOAT originY,
     DWRITE_HIT_TEST_METRICS *metrics, UINT32 max_metricscount, UINT32* actual_metricscount)
 {
-    FIXME("%p, %u, %u, %f, %f, %p, %u, %p): stub\n", iface, textPosition, textLength, originX, originY, metrics,
+    struct dwrite_textlayout *layout = impl_from_IDWriteTextLayout4(iface);
+    UINT32 count = 0, pos;
+    HRESULT hr;
+
+    TRACE("%p, %u, %u, %f, %f, %p, %u, %p.\n", iface, textPosition, textLength, originX, originY, metrics,
         max_metricscount, actual_metricscount);
 
-    return E_NOTIMPL;
+    if (!metrics || !actual_metricscount)
+        return E_INVALIDARG;
+
+    if (FAILED(hr = layout_compute_effective_runs(layout)))
+        return hr;
+
+    *actual_metricscount = 0;
+
+    if (textPosition >= layout->length || textLength == 0)
+        return S_OK;
+
+    textLength = min(textLength, layout->length - textPosition);
+
+    for (pos = textPosition; pos < textPosition + textLength && count < max_metricscount; ++pos)
+    {
+        DWRITE_HIT_TEST_METRICS temp_metrics;
+        FLOAT dummy_x, dummy_y;
+
+        hr = IDWriteTextLayout4_HitTestTextPosition(iface, pos, FALSE, &dummy_x, &dummy_y, &temp_metrics);
+        if (SUCCEEDED(hr))
+        {
+            if (count == 0 || metrics[count - 1].textPosition + metrics[count - 1].length != temp_metrics.textPosition)
+            {
+                metrics[count] = temp_metrics;
+                metrics[count].left += originX;
+                metrics[count].top += originY;
+                ++count;
+                pos += temp_metrics.length - 1;
+            }
+        }
+    }
+
+    *actual_metricscount = count;
+    return S_OK;
 }
 
 static HRESULT WINAPI dwritetextlayout1_SetPairKerning(IDWriteTextLayout4 *iface, BOOL is_pairkerning_enabled,
