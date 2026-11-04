@@ -66,7 +66,7 @@ static void test_geometry_computelength(ID2D1Factory *factory)
     sink->lpVtbl->Close(sink);
     ID2D1GeometrySink_Release(sink);
 
-    hr = ID2D1PathGeometry_ComputeLength(path_geom, NULL, &length);
+    hr = ID2D1PathGeometry_ComputeLength(path_geom, NULL, 0.25f, &length);
     check("geometry_computelength", SUCCEEDED(hr),
             "ComputeLength: hr=%lx length=%.2f", hr, length);
 

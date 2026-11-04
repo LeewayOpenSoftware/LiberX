@@ -4389,7 +4389,6 @@ static HRESULT WINAPI dwritetextlayout_HitTestPoint(IDWriteTextLayout4 *iface,
     struct dwrite_textlayout *layout = impl_from_IDWriteTextLayout4(iface);
     struct layout_effective_run *run;
     UINT32 closest_pos = 0;
-    BOOL found = FALSE;
     HRESULT hr;
 
     TRACE("%p, %.8e, %.8e, %p, %p, %p.\n", iface, pointX, pointY, is_trailinghit, is_inside, metrics);
@@ -4418,7 +4417,6 @@ static HRESULT WINAPI dwritetextlayout_HitTestPoint(IDWriteTextLayout4 *iface,
                 *is_inside = TRUE;
                 closest_pos = run->start_position;
                 *is_trailinghit = (pointX - run_left) > run->width / 2.0f;
-                found = TRUE;
                 break;
             }
         }
