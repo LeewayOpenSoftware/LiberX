@@ -751,6 +751,10 @@ D3D12CreateDevice(IUnknown *adapter, D3D_FEATURE_LEVEL minimum_feature_level,
 {
     HRESULT hr;
 
+    /* NULL output unconditionally per COM contract */
+    if (device)
+        *device = NULL;
+
     /* Validate feature level (0x1 and other invalid levels should fail) */
     if (minimum_feature_level != D3D_FEATURE_LEVEL_9_1 &&
         minimum_feature_level != D3D_FEATURE_LEVEL_9_2 &&
@@ -762,8 +766,6 @@ D3D12CreateDevice(IUnknown *adapter, D3D_FEATURE_LEVEL minimum_feature_level,
         minimum_feature_level != D3D_FEATURE_LEVEL_12_0 &&
         minimum_feature_level != D3D_FEATURE_LEVEL_12_1)
     {
-        if (device)
-            *device = NULL;
         return E_INVALIDARG;
     }
 
