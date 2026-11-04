@@ -95,8 +95,47 @@ static void test_dinput_create(void)
     if (SUCCEEDED(hr) && dinput)
     {
         hr = IDirectInput8_EnumDevices(dinput, DI8DEVCLASS_GAMECTRL, NULL, NULL, DIEDFL_ALLDEVICES);
-        check("dinput_enum", hr == E_INVALIDARG || SUCCEEDED(hr),
-                "enum (no callback): hr=%lx", hr);
+        check("dinput_enum", hr == E_INVALIDARG,
+                "enum (no callback) must fail: hr=%lx", hr);
+
+        IDirectInput8_Release(dinput);
+    }
+
+    FreeLibrary(dinput8);
+}
+
+static void test_dinput_unsupported_operations(void)
+{
+    HMODULE dinput8;
+    dinput_create_func create_func;
+    IDirectInput8A *dinput = NULL;
+    HRESULT hr;
+
+    dinput8 = LoadLibraryA("dinput8.dll");
+    if (!dinput8) {
+        report("dinput_unsupported", "SKIP", "dinput8.dll not found");
+        return;
+    }
+
+    create_func = (dinput_create_func)GetProcAddress(dinput8, "DirectInput8Create");
+    if (!create_func) {
+        report("dinput_unsupported", "SKIP", "DirectInput8Create export");
+        FreeLibrary(dinput8);
+        return;
+    }
+
+    hr = create_func(GetModuleHandleA(NULL), DIRECTINPUT_VERSION, &IID_IDirectInput8A, (void **)&dinput, NULL);
+    if (FAILED(hr)) {
+        report("dinput_unsupported", "SKIP", "DirectInput8Create failed");
+        FreeLibrary(dinput8);
+        return;
+    }
+
+    if (dinput)
+    {
+        hr = IDirectInput8_SendDeviceData(dinput, 0, NULL, NULL, 0);
+        check("dinput_senddevicedata", hr == DIERR_UNSUPPORTED,
+                "SendDeviceData must return unsupported: hr=%lx", hr);
 
         IDirectInput8_Release(dinput);
     }
@@ -126,6 +165,7 @@ int main(void)
 {
     test_xinput_unsupported();
     test_dinput_create();
+    test_dinput_unsupported_operations();
     test_hid_available();
 
     printf("INPUT_CONTRACTS v%d SUMMARY PASS=%d FAIL=%d SKIP=%d\n", TEST_VERSION, pass_count, fail_count, skip_count);

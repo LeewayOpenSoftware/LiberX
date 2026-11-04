@@ -1778,7 +1778,7 @@ static HRESULT WINAPI dinput_device_SendDeviceData( IDirectInputDevice8W *iface,
                                                     const DIDEVICEOBJECTDATA *data, DWORD *count, DWORD flags )
 {
     FIXME( "iface %p, size %lu, data %p, count %p, flags %#lx stub!\n", iface, size, data, count, flags );
-    return DI_OK;
+    return DIERR_UNSUPPORTED;
 }
 
 static HRESULT WINAPI dinput_device_EnumEffectsInFile( IDirectInputDevice8W *iface, const WCHAR *filename,
