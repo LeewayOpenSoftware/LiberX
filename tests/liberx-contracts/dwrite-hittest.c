@@ -106,6 +106,34 @@ static void test_hittesttextrange_basic(IDWriteFactory *factory)
     IDWriteTextLayout_Release(layout);
 }
 
+static void test_dwritecreatfactory_invalid_type(void)
+{
+    HMODULE dwrite;
+    create_factory_func create_factory;
+    IDWriteFactory *factory;
+    HRESULT hr;
+
+    dwrite = LoadLibraryA("dwrite.dll");
+    if (!dwrite) {
+        report("factory_invalid_type", "SKIP", "dwrite.dll not found");
+        return;
+    }
+
+    create_factory = (create_factory_func)GetProcAddress(dwrite, "DWriteCreateFactory");
+    if (!create_factory) {
+        report("factory_invalid_type", "SKIP", "DWriteCreateFactory export");
+        FreeLibrary(dwrite);
+        return;
+    }
+
+    factory = (IDWriteFactory *)0xdeadbeef;
+    hr = create_factory(999, &IID_IDWriteFactory, (IUnknown **)&factory);
+    check("factory_invalid_type", hr == E_INVALIDARG && factory == NULL,
+            "invalid type: hr=%lx factory=%p", hr, factory);
+
+    FreeLibrary(dwrite);
+}
+
 int main(void)
 {
     create_factory_func create_factory;
@@ -132,6 +160,8 @@ int main(void)
         FreeLibrary(dwrite);
         return 1;
     }
+
+    test_dwritecreatfactory_invalid_type();
 
     test_hittestpoint_basic(factory);
     test_hittesttextrange_basic(factory);

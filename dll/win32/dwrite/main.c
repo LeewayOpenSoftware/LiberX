@@ -2306,7 +2306,12 @@ HRESULT WINAPI DWriteCreateFactory(DWRITE_FACTORY_TYPE type, REFIID riid, IUnkno
 
     TRACE("%d, %s, %p.\n", type, debugstr_guid(riid), ret);
 
+    if (!ret)
+        return E_INVALIDARG;
     *ret = NULL;
+
+    if (type != DWRITE_FACTORY_TYPE_SHARED && type != DWRITE_FACTORY_TYPE_ISOLATED)
+        return E_INVALIDARG;
 
     if (type == DWRITE_FACTORY_TYPE_SHARED && shared_factory)
         return IDWriteFactory7_QueryInterface(shared_factory, riid, (void**)ret);
