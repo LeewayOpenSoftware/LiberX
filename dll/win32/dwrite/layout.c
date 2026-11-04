@@ -4386,70 +4386,9 @@ width_done:
 static HRESULT WINAPI dwritetextlayout_HitTestPoint(IDWriteTextLayout4 *iface,
     FLOAT pointX, FLOAT pointY, BOOL* is_trailinghit, BOOL* is_inside, DWRITE_HIT_TEST_METRICS *metrics)
 {
-    struct dwrite_textlayout *layout = impl_from_IDWriteTextLayout4(iface);
-    struct layout_effective_run *run;
-    UINT32 closest_pos = 0;
-    FLOAT unused_x, unused_y;
-    HRESULT hr;
+    FIXME("%p, %.8e, %.8e, %p, %p, %p): stub\n", iface, pointX, pointY, is_trailinghit, is_inside, metrics);
 
-    TRACE("%p, %.8e, %.8e, %p, %p, %p.\n", iface, pointX, pointY, is_trailinghit, is_inside, metrics);
-
-    if (!is_trailinghit || !is_inside || !metrics)
-        return E_INVALIDARG;
-
-    if (FAILED(hr = layout_compute_effective_runs(layout)))
-        return hr;
-
-    *is_inside = pointY >= 0.0f && pointY < layout->metrics.height;
-    *is_trailinghit = FALSE;
-
-    LIST_FOR_EACH_ENTRY(run, &layout->effective_runs, struct layout_effective_run, entry)
-    {
-        FLOAT run_top = run->origin.y - run->line->baseline;
-        FLOAT run_bottom = run_top + run->line->height;
-
-        if (pointY >= run_top && pointY < run_bottom)
-        {
-            FLOAT run_left = run->left + run->align_dx;
-            FLOAT run_right = run_left + run->width;
-
-            if (pointX >= run_left && pointX < run_right)
-            {
-                *is_inside = TRUE;
-
-                /* For regular text runs, find the cluster the point falls into */
-                if (!run->object)
-                {
-                    FLOAT pixel_offset = pointX - run_left;
-                    FLOAT cluster_x = 0.0f;
-                    unsigned int cluster;
-
-                    for (cluster = run->first_cluster; cluster < layout->cluster_count; ++cluster)
-                    {
-                        FLOAT cluster_width = layout->clustermetrics[cluster].width;
-                        if (pixel_offset >= cluster_x && pixel_offset < cluster_x + cluster_width)
-                        {
-                            /* Found the cluster; get its text position */
-                            closest_pos = run->start_position;
-                            for (unsigned int i = run->first_cluster; i < cluster; ++i)
-                                closest_pos += layout->clustermetrics[i].length;
-                            *is_trailinghit = (pixel_offset - cluster_x) > cluster_width / 2.0f;
-                            break;
-                        }
-                        cluster_x += cluster_width;
-                    }
-                }
-                else
-                {
-                    closest_pos = run->start_position;
-                    *is_trailinghit = (pointX - run_left) > run->width / 2.0f;
-                }
-                break;
-            }
-        }
-    }
-
-    return IDWriteTextLayout4_HitTestTextPosition(iface, closest_pos, *is_trailinghit, &unused_x, &unused_y, metrics);
+    return E_NOTIMPL;
 }
 
 static struct layout_effective_run *layout_get_effective_run_for_position(struct dwrite_textlayout *layout,
