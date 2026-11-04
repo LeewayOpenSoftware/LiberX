@@ -30,6 +30,10 @@ HRESULT d3d12_native_create_device(IUnknown *adapter, D3D_FEATURE_LEVEL minimum_
         void **device);
 #endif
 
+/* Forward declare vkd3d-utils D3D12CreateDeviceVKD3D for wrapper */
+extern HRESULT WINAPI D3D12CreateDeviceVKD3D(IUnknown *adapter, D3D_FEATURE_LEVEL minimum_feature_level,
+        REFIID iid, void **device, enum vkd3d_api_version api_version);
+
 static HRESULT
 d3d12_signal_event(HANDLE event)
 {
