@@ -50,7 +50,7 @@ jobs:
     - name: Build the DirectX modules
       run: |
         . "$HOME/.local/opt/rosbe/rosbe-env.sh"
-        ninja -C output-Clang-amd64-debug -k 0 d3d12 d3d11 dxgi d3d9 d3d8 ddraw dsound dinput dinput8 dwrite d2d1 xinput1_4 d3d10 d3d10core d3d10_1 d3dcompiler_47 dcomp dxdiagn dxcore d3dwine vkd3d liberx_shaders liberx_contracts liberx_dwrite_hittest liberx_input_contracts
+        ninja -C output-Clang-amd64-debug -k 0 d3d12 d3d11 dxgi d3d9 d3d8 ddraw dsound dinput dinput8 dwrite d2d1 xinput1_4 d3d10 d3d10core d3d10_1 d3dcompiler_47 dcomp dxdiagn dxcore d3dwine vkd3d liberx_shaders liberx_contracts liberx_dwrite_hittest liberx_input_contracts liberx_d2d_geometry
 
     - name: Collect the DLLs
       if: ${{ always() }}
