@@ -170,6 +170,47 @@ static void test_hittestpoint_ligatures(IDWriteFactory *factory)
     IDWriteTextLayout_Release(layout);
 }
 
+static void test_hittesttextposition_caret(IDWriteFactory *factory)
+{
+    IDWriteTextFormat *format;
+    IDWriteTextLayout *layout;
+    DWRITE_HIT_TEST_METRICS metrics;
+    FLOAT point_x, point_y;
+    const WCHAR text[] = L"Hello";
+    HRESULT hr;
+
+    hr = IDWriteFactory_CreateTextFormat(factory, L"Arial", NULL, DWRITE_FONT_WEIGHT_NORMAL,
+            DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 12.0f, L"en-us", &format);
+    if (FAILED(hr)) {
+        report("hittesttextposition", "SKIP", "CreateTextFormat failed");
+        return;
+    }
+
+    hr = IDWriteFactory_CreateTextLayout(factory, text, ARRAY_SIZE(text) - 1, format, 200.0f, 100.0f, &layout);
+    IDWriteTextFormat_Release(format);
+    if (FAILED(hr)) {
+        report("hittesttextposition", "SKIP", "CreateTextLayout failed");
+        return;
+    }
+
+    /* Test caret position at start (position 0, leading edge) */
+    hr = IDWriteTextLayout_HitTestTextPosition(layout, 0, FALSE, &point_x, &point_y, &metrics);
+    check("hittesttextposition_start", SUCCEEDED(hr) && metrics.textPosition == 0 && point_x >= 0.0f && point_y >= 0.0f,
+            "position 0 leading: hr=%lx pos=%u caret=(%f, %f)", hr, metrics.textPosition, point_x, point_y);
+
+    /* Test caret position at middle */
+    hr = IDWriteTextLayout_HitTestTextPosition(layout, 2, FALSE, &point_x, &point_y, &metrics);
+    check("hittesttextposition_middle", SUCCEEDED(hr) && metrics.textPosition == 2,
+            "position 2: hr=%lx pos=%u caret=(%f, %f)", hr, metrics.textPosition, point_x, point_y);
+
+    /* Test caret metrics width and height */
+    hr = IDWriteTextLayout_HitTestTextPosition(layout, 0, TRUE, &point_x, &point_y, &metrics);
+    check("hittesttextposition_metrics", SUCCEEDED(hr) && metrics.width > 0.0f && metrics.height > 0.0f,
+            "metrics: width=%f height=%f", metrics.width, metrics.height);
+
+    IDWriteTextLayout_Release(layout);
+}
+
 static void test_dwritecreatfactory_invalid_type(void)
 {
     HMODULE dwrite;
@@ -231,6 +272,7 @@ int main(void)
     test_hittesttextrange_basic(factory);
     test_hittestpoint_bidi_text(factory);
     test_hittestpoint_ligatures(factory);
+    test_hittesttextposition_caret(factory);
 
     IDWriteFactory_Release(factory);
     FreeLibrary(dwrite);
