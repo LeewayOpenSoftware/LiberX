@@ -38,6 +38,7 @@ static void check(const char *name, BOOL ok, const char *fmt, ...)
 
 typedef DWORD (WINAPI *xinput_get_state_func)(DWORD, XINPUT_STATE *);
 typedef DWORD (WINAPI *xinput_set_state_func)(DWORD, XINPUT_VIBRATION *);
+typedef DWORD (WINAPI *xinput_get_battery_func)(DWORD, BYTE, XINPUT_BATTERY_INFORMATION *);
 typedef DWORD (WINAPI *dinput_create_func)(HINSTANCE, DWORD, REFIID, void **, void *);
 
 static void test_xinput_unsupported(void)
@@ -161,9 +162,39 @@ static void test_hid_available(void)
     if (hid) FreeLibrary(hid);
 }
 
+static void test_xinput_battery_unsupported(void)
+{
+    HMODULE xinput;
+    xinput_get_battery_func get_battery;
+    XINPUT_BATTERY_INFORMATION battery;
+    DWORD result;
+
+    xinput = LoadLibraryA("xinput1_4.dll");
+    if (!xinput) {
+        report("xinput_battery", "SKIP", "xinput1_4.dll not found");
+        return;
+    }
+
+    get_battery = (xinput_get_battery_func)GetProcAddress(xinput, "XInputGetBatteryInformation");
+    if (!get_battery) {
+        report("xinput_battery", "SKIP", "XInputGetBatteryInformation not found");
+        FreeLibrary(xinput);
+        return;
+    }
+
+    battery.BatteryLevel = BATTERY_LEVEL_FULL;
+    battery.BatteryType = BATTERY_TYPE_UNKNOWN;
+    result = get_battery(0, BATTERY_DEVTYPE_GAMEPAD, &battery);
+    check("xinput_battery_unsupported", result == ERROR_NOT_SUPPORTED || result == ERROR_DEVICE_NOT_CONNECTED,
+            "battery info must be unsupported or device not found: result=%lu", result);
+
+    FreeLibrary(xinput);
+}
+
 int main(void)
 {
     test_xinput_unsupported();
+    test_xinput_battery_unsupported();
     test_dinput_create();
     test_dinput_unsupported_operations();
     test_hid_available();
