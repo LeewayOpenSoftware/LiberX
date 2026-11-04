@@ -106,6 +106,70 @@ static void test_hittesttextrange_basic(IDWriteFactory *factory)
     IDWriteTextLayout_Release(layout);
 }
 
+static void test_hittestpoint_bidi_text(IDWriteFactory *factory)
+{
+    IDWriteTextFormat *format;
+    IDWriteTextLayout *layout;
+    DWRITE_HIT_TEST_METRICS metrics;
+    BOOL is_trailing, is_inside;
+    const WCHAR text[] = L"Hello שלום World";
+    HRESULT hr;
+
+    hr = IDWriteFactory_CreateTextFormat(factory, L"Arial", NULL, DWRITE_FONT_WEIGHT_NORMAL,
+            DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 12.0f, L"en-us", &format);
+    if (FAILED(hr)) {
+        report("hittestpoint_bidi", "SKIP", "CreateTextFormat failed");
+        return;
+    }
+
+    hr = IDWriteFactory_CreateTextLayout(factory, text, ARRAY_SIZE(text) - 1, format, 400.0f, 100.0f, &layout);
+    IDWriteTextFormat_Release(format);
+    if (FAILED(hr)) {
+        report("hittestpoint_bidi", "SKIP", "CreateTextLayout failed");
+        return;
+    }
+
+    hr = IDWriteTextLayout_HitTestPoint(layout, 30.0f, 5.0f, &is_trailing, &is_inside, &metrics);
+    check("hittestpoint_bidi_ltr", SUCCEEDED(hr) && is_inside && metrics.textPosition < 6,
+            "LTR text: hr=%lx pos=%u bidi=%u", hr, metrics.textPosition, metrics.bidiLevel);
+
+    hr = IDWriteTextLayout_HitTestPoint(layout, 350.0f, 5.0f, &is_trailing, &is_inside, &metrics);
+    check("hittestpoint_bidi_rtl", SUCCEEDED(hr) && is_inside,
+            "RTL text (Hebrew): hr=%lx pos=%u bidi=%u", hr, metrics.textPosition, metrics.bidiLevel);
+
+    IDWriteTextLayout_Release(layout);
+}
+
+static void test_hittestpoint_ligatures(IDWriteFactory *factory)
+{
+    IDWriteTextFormat *format;
+    IDWriteTextLayout *layout;
+    DWRITE_HIT_TEST_METRICS metrics;
+    BOOL is_trailing, is_inside;
+    const WCHAR text[] = L"fi fl ff ffi";
+    HRESULT hr;
+
+    hr = IDWriteFactory_CreateTextFormat(factory, L"Calibri", NULL, DWRITE_FONT_WEIGHT_NORMAL,
+            DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 14.0f, L"en-us", &format);
+    if (FAILED(hr)) {
+        report("hittestpoint_ligatures", "SKIP", "CreateTextFormat failed");
+        return;
+    }
+
+    hr = IDWriteFactory_CreateTextLayout(factory, text, ARRAY_SIZE(text) - 1, format, 200.0f, 100.0f, &layout);
+    IDWriteTextFormat_Release(format);
+    if (FAILED(hr)) {
+        report("hittestpoint_ligatures", "SKIP", "CreateTextLayout failed");
+        return;
+    }
+
+    hr = IDWriteTextLayout_HitTestPoint(layout, 10.0f, 5.0f, &is_trailing, &is_inside, &metrics);
+    check("hittestpoint_ligatures", SUCCEEDED(hr) && is_inside && metrics.length >= 2,
+            "ligature cluster: hr=%lx pos=%u len=%u", hr, metrics.textPosition, metrics.length);
+
+    IDWriteTextLayout_Release(layout);
+}
+
 static void test_dwritecreatfactory_invalid_type(void)
 {
     HMODULE dwrite;
@@ -165,6 +229,8 @@ int main(void)
 
     test_hittestpoint_basic(factory);
     test_hittesttextrange_basic(factory);
+    test_hittestpoint_bidi_text(factory);
+    test_hittestpoint_ligatures(factory);
 
     IDWriteFactory_Release(factory);
     FreeLibrary(dwrite);
