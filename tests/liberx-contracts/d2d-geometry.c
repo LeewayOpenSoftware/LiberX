@@ -104,7 +104,14 @@ static void test_geometry_widen(ID2D1Factory *factory)
     hr = ID2D1Factory_CreatePathGeometry(factory, &widened_geom);
     if (SUCCEEDED(hr))
     {
-        hr = ID2D1PathGeometry_Widen(path_geom, 5.0f, NULL, NULL, &widened_geom);
+        ID2D1GeometrySink *widen_sink = NULL;
+        hr = ID2D1PathGeometry_Open(widened_geom, &widen_sink);
+        if (SUCCEEDED(hr))
+        {
+            hr = ID2D1PathGeometry_Widen(path_geom, 5.0f, NULL, NULL, 0.25f, widen_sink);
+            widen_sink->lpVtbl->Close(widen_sink);
+            ID2D1GeometrySink_Release(widen_sink);
+        }
         check("geometry_widen", hr == E_NOTIMPL || SUCCEEDED(hr),
                 "Widen: hr=%lx", hr);
         ID2D1PathGeometry_Release(widened_geom);
