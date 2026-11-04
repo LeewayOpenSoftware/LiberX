@@ -4416,8 +4416,34 @@ static HRESULT WINAPI dwritetextlayout_HitTestPoint(IDWriteTextLayout4 *iface,
             if (pointX >= run_left && pointX < run_right)
             {
                 *is_inside = TRUE;
-                closest_pos = run->start_position;
-                *is_trailinghit = (pointX - run_left) > run->width / 2.0f;
+
+                /* For regular text runs, find the cluster the point falls into */
+                if (!run->object)
+                {
+                    FLOAT pixel_offset = pointX - run_left;
+                    FLOAT cluster_x = 0.0f;
+                    unsigned int cluster;
+
+                    for (cluster = run->first_cluster; cluster < layout->cluster_count; ++cluster)
+                    {
+                        FLOAT cluster_width = layout->clustermetrics[cluster].width;
+                        if (pixel_offset >= cluster_x && pixel_offset < cluster_x + cluster_width)
+                        {
+                            /* Found the cluster; get its text position */
+                            closest_pos = run->start_position;
+                            for (unsigned int i = run->first_cluster; i < cluster; ++i)
+                                closest_pos += layout->clustermetrics[i].length;
+                            *is_trailinghit = (pixel_offset - cluster_x) > cluster_width / 2.0f;
+                            break;
+                        }
+                        cluster_x += cluster_width;
+                    }
+                }
+                else
+                {
+                    closest_pos = run->start_position;
+                    *is_trailinghit = (pointX - run_left) > run->width / 2.0f;
+                }
                 break;
             }
         }
