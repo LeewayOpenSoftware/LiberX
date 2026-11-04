@@ -116,7 +116,7 @@ static void test_unknown_contract(const char *dll, const char *what, IUnknown *o
     if (same)
     {
         ref = IUnknown_AddRef(object);
-        check(dll, what, ref >= 2, "AddRef after QI: %lu", ref);
+        check(dll, what, ref >= 3, "AddRef after QI: %lu", ref);
         IUnknown_Release(object);
         IUnknown_Release(same);
     }

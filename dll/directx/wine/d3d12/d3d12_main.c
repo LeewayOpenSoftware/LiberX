@@ -740,6 +740,39 @@ static HRESULT d3d12_device_factory_create(REFIID iid, void **out)
     return hr;
 }
 
+/* Wrapper for D3D12CreateDevice that ensures output pointer is NULL on failure */
+HRESULT WINAPI
+D3D12CreateDevice(IUnknown *adapter, D3D_FEATURE_LEVEL minimum_feature_level,
+        REFIID iid, void **device)
+{
+    HRESULT hr;
+
+    /* Validate feature level (0x1 and other invalid levels should fail) */
+    if (minimum_feature_level != D3D_FEATURE_LEVEL_9_1 &&
+        minimum_feature_level != D3D_FEATURE_LEVEL_9_2 &&
+        minimum_feature_level != D3D_FEATURE_LEVEL_9_3 &&
+        minimum_feature_level != D3D_FEATURE_LEVEL_10_0 &&
+        minimum_feature_level != D3D_FEATURE_LEVEL_10_1 &&
+        minimum_feature_level != D3D_FEATURE_LEVEL_11_0 &&
+        minimum_feature_level != D3D_FEATURE_LEVEL_11_1 &&
+        minimum_feature_level != D3D_FEATURE_LEVEL_12_0 &&
+        minimum_feature_level != D3D_FEATURE_LEVEL_12_1)
+    {
+        if (device)
+            *device = NULL;
+        return E_INVALIDARG;
+    }
+
+    /* Call vkd3d implementation */
+    hr = D3D12CreateDeviceVKD3D(adapter, minimum_feature_level, iid, device, VKD3D_API_VERSION_1_0);
+
+    /* Ensure output is NULL on failure per COM contract */
+    if (FAILED(hr) && device)
+        *device = NULL;
+
+    return hr;
+}
+
 HRESULT WINAPI
 D3D12GetInterface(REFCLSID clsid, REFIID iid, void **debug)
 {

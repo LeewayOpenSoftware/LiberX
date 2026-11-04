@@ -2107,16 +2107,22 @@ static const IDWriteFactory7Vtbl dwritefactoryvtbl =
 
 static ULONG WINAPI shareddwritefactory_AddRef(IDWriteFactory7 *iface)
 {
-    TRACE("%p.\n", iface);
+    struct dwritefactory *factory = impl_from_IDWriteFactory7(iface);
+    ULONG refcount = InterlockedIncrement(&factory->refcount);
 
-    return 2;
+    TRACE("%p, refcount %lu.\n", iface, refcount);
+
+    return refcount;
 }
 
 static ULONG WINAPI shareddwritefactory_Release(IDWriteFactory7 *iface)
 {
-    TRACE("%p.\n", iface);
+    struct dwritefactory *factory = impl_from_IDWriteFactory7(iface);
+    ULONG refcount = InterlockedDecrement(&factory->refcount);
 
-    return 1;
+    TRACE("%p, refcount %lu.\n", iface, refcount);
+
+    return refcount;
 }
 
 static const IDWriteFactory7Vtbl shareddwritefactoryvtbl =

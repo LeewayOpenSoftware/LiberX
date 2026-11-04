@@ -61,7 +61,10 @@ static void test_xinput_unsupported(void)
         return;
     }
 
-    /* Non-existent controller should fail honestly */
+    /* Non-existent controller should fail honestly (dwUserIndex >= XUSER_MAX_COUNT)
+     * Per Microsoft XInput documentation, returns ERROR_DEVICE_NOT_CONNECTED for disconnected
+     * controllers. Parameter validation before device check may return ERROR_INVALID_PARAMETER.
+     * Test accepts both per COM practice of validating parameters before state checks. */
     result = get_state(255, &state);
     check("xinput_invalid_user", result == ERROR_DEVICE_NOT_CONNECTED || result == ERROR_NOT_SUPPORTED || result == ERROR_INVALID_PARAMETER,
             "invalid user: result=%lu", result);
